@@ -1,0 +1,19 @@
+# Default owner. Required review applies to everyone except repository
+# admins, who keep the ruleset bypass.
+* @p-raman
+
+# Listed explicitly so CODEOWNERS stays readable as a map of the repo, even
+# though * already matches.
+/terraform/edge-headers/   @p-raman
+/terraform/edge-dns/       @p-raman
+/terraform/cloud-access/   @p-raman
+/terraform/modules/        @p-raman
+/ci/                  @p-raman
+/scripts/                  @p-raman
+/oncall/                   @p-raman
+
+# The URL allowlists that feed the automatic production apply. These carry
+# extra owners so a change here can be reviewed by someone other than its
+# author. Last matching pattern wins.
+/terraform/edge-headers/variables.tf          @p-raman @d-okafor
+/terraform/modules/header-baseline/variables.tf @p-raman @d-okafor

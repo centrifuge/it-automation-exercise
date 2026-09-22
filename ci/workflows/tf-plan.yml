@@ -1,0 +1,55 @@
+name: TF Plan
+
+# Read-only plans of all three stacks, on every pull request that touches
+# terraform/. Never applies anything.
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - 'ci/terraform-stacks.json'
+      - 'ci/workflows/tf-plan.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - 'ci/terraform-stacks.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        stack:
+          - terraform/edge-headers
+          - terraform/edge-dns
+          - terraform/cloud-access
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: fmt
+        working-directory: ${{ matrix.stack }}
+        run: terraform fmt -check -recursive
+
+      - name: init
+        working-directory: ${{ matrix.stack }}
+        run: terraform init -input=false
+
+      - name: validate
+        working-directory: ${{ matrix.stack }}
+        run: terraform validate
+
+      - name: plan
+        working-directory: ${{ matrix.stack }}
+        run: terraform plan -input=false -no-color

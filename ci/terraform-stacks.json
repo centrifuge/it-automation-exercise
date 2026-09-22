@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "description": "Single source of truth for every deployable Terraform root and shared module. Read by the CI workflows and by scripts/apply.sh so they cannot drift apart. Credential fields name CI variables and local environment variables only, never values.",
+  "terraform_version": "1.9.5",
+  "state": {
+    "bucket": "northwind-state"
+  },
+  "stacks": [
+    {
+      "id": "edge-headers",
+      "provider": "edge",
+      "path": "terraform/edge-headers",
+      "modules": ["header-baseline"],
+      "backend": { "prefix": "edge/prod/edge-headers" },
+      "plan": {
+        "credentials": {
+          "edge_token_secret": "EDGE_SERVICE_READ_ONLY_TOKEN"
+        }
+      },
+      "apply": {
+        "mode": "automatic",
+        "workflow": "tf-edge-apply.yml",
+        "credentials": {
+          "edge_token_secret": "EDGE_SERVICE_HEADERS_WRITE_TOKEN",
+          "environment": "prod"
+        },
+        "note": "The only CI apply in the repo. Header changes are availability sensitive and waiting for a person is worse than shipping the change."
+      },
+      "runbook": "terraform/edge-headers/OPERATIONS.md"
+    },
+    {
+      "id": "edge-dns",
+      "provider": "edge",
+      "path": "terraform/edge-dns",
+      "modules": [],
+      "backend": { "prefix": "edge/prod/edge-dns" },
+      "plan": {
+        "credentials": {
+          "edge_token_secret": "EDGE_SERVICE_READ_ONLY_TOKEN"
+        }
+      },
+      "apply": {
+        "mode": "operator",
+        "credentials": {
+          "local_env": "EDGE_SERVICE_WRITE_TOKEN"
+        },
+        "note": "Owns the zones' email records. No CI write credential exists for this stack."
+      },
+      "runbook": "terraform/edge-dns/OPERATIONS.md"
+    },
+    {
+      "id": "cloud-access",
+      "provider": "cloud-platform",
+      "path": "terraform/cloud-access",
+      "modules": [],
+      "backend": { "prefix": "cloud-platform/access" },
+      "plan": {
+        "credentials": {
+          "workload_identity_provider_var": "TF_PLAN_WIF_PROVIDER",
+          "service_identity_var": "TF_PLAN_SERVICE_IDENTITY"
+        }
+      },
+      "apply": {
+        "mode": "operator",
+        "credentials": {
+          "local_identity": true
+        },
+        "note": "Project IAM. Applied by a person with their own credentials so the audit log names a human."
+      },
+      "runbook": "terraform/cloud-access/OPERATIONS.md"
+    }
+  ],
+  "modules": [
+    {
+      "id": "header-baseline",
+      "path": "terraform/modules/header-baseline",
+      "description": "Shared response-header directive baseline. Never applied on its own.",
+      "consumers": ["edge-headers"]
+    }
+  ]
+}

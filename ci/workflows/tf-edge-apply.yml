@@ -1,0 +1,58 @@
+name: TF Edge Headers Apply
+
+# The one stack CI applies. Runs on merge to main, plans, and applies the saved
+# plan only when there are changes to make.
+#
+# The write token is scoped to response-header rules on the two zones and to
+# nothing else, and it lives in the branch-protected `prod` environment.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/edge-headers/**'
+      - 'ci/workflows/tf-edge-apply.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tf-edge-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: prod
+    defaults:
+      run:
+        working-directory: terraform/edge-headers
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: init
+        run: terraform init -input=false
+
+      - name: plan
+        id: plan
+        run: |
+          set +e
+          terraform plan -input=false -detailed-exitcode -out=tfplan
+          code=$?
+          set -e
+          case "$code" in
+            0) echo "has_changes=false" >> "$CI_OUTPUT" ;;
+            2) echo "has_changes=true"  >> "$CI_OUTPUT" ;;
+            *) exit "$code" ;;
+          esac
+
+      - name: apply
+        if: steps.plan.outputs.has_changes == 'true'
+        run: terraform apply -input=false -auto-approve tfplan

@@ -1,0 +1,69 @@
+# On-call roster template.
+#
+# Copy to roster.yaml and fill in from the password manager. roster.yaml is
+# gitignored: it holds people's personal contact details.
+#
+# The paging tool's Terraform stack reads this file and refuses to apply until
+# every field below is populated.
+
+schema_version: 1
+
+rotation_anchor: "2026-01-05T08:00:00+01:00" # a past Monday, 08:00 local
+
+# responders is a list. Add or remove entries as the rotation changes. Update
+# the escalation lists below to match.
+responders:
+  - key: primary_a
+    name: "" # full name, no placeholders
+    email: "" # company address
+    time_zone: "" # IANA name, e.g. Europe/Berlin
+    contacts_verified_at: "" # ISO date. See below.
+    high_urgency_confirmed: false # See below.
+
+  - key: primary_b
+    name: ""
+    email: ""
+    time_zone: ""
+    contacts_verified_at: ""
+    high_urgency_confirmed: false
+
+  - key: backup_a
+    name: ""
+    email: ""
+    time_zone: ""
+    contacts_verified_at: ""
+    high_urgency_confirmed: false
+
+  - key: backup_b
+    name: ""
+    email: ""
+    time_zone: ""
+    contacts_verified_at: ""
+    high_urgency_confirmed: false
+
+escalation:
+  primary: [primary_a, primary_b]
+  backup: [backup_a, backup_b]
+  final: emergency_responder
+
+emergency_responder:
+  key: emergency
+  name: ""
+  email: ""
+  time_zone: ""
+  contacts_verified_at: ""
+  high_urgency_confirmed: false
+
+# contacts_verified_at and high_urgency_confirmed
+#
+# The paging tool holds each person's own phone number, SMS and push settings,
+# and their notification rules. It will happily accept a rotation whose pages
+# reach nobody.
+#
+# These two fields record that a high urgency page was actually sent to that
+# person and that they saw it arrive on the device they expect to be woken by.
+# Set high_urgency_confirmed to true, and contacts_verified_at to the date it
+# happened, only after that has been done for that person.
+#
+# Business hours coverage: primary is Mon to Fri 07:00 to 19:00 UTC. Outside
+# that window every page goes straight to the backup level.
