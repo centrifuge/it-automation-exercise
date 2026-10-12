@@ -1,0 +1,10 @@
+{
+  "ticket_id": "REQ-142",
+  "name": "Alex Doe",
+  "email": "alex.doe@example-co.io",
+  "github_username": "alexdoe-dev",
+  "role": "contractor",
+  "manager_email": "maria.lead@example-co.io",
+  "last_day": "2026-10-16",
+  "systems": ["workspace", "github", "slack", "cloudflare", "claude", "1password", "yubikey"]
+}
